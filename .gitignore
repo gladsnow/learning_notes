@@ -1,0 +1,6 @@
+web_projects/flask_base_api/.vscode
+web_projects/flask_base_api/flask_base_api/__pycache__
+web_projects/flask_base_api/flask_base_api/*/__pycache__
+web_projects/flask_base_api/venv
+web_projects/flask_base_api/__pycache__
+
