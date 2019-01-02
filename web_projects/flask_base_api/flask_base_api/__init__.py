@@ -4,6 +4,7 @@ import os
 from flask import Flask
 from .api_v1_0 import api_v1_0 as api_v1_0_bp
 
+
 def create_app(config_file = None):
     '''Create and configure the app'''
     app=Flask(__name__)

@@ -3,7 +3,7 @@
 from flask import request,jsonify,current_app
 from flask_httpauth import HTTPBasicAuth, HTTPTokenAuth, MultiAuth
 from werkzeug.security import check_password_hash
-from itsdangerous import TimedJSONWebSignatureSerializer as Serializer
+from itsdangerous import TimedJSONWebSignatureSerializer as Serializer,SignatureExpired, BadSignature
 from . import api_v1_0
 from ..database.models import Users
 
@@ -12,8 +12,38 @@ token_auth = HTTPTokenAuth(scheme='Bearer')
 multi_auth = MultiAuth(base_auth,token_auth)
 
 def generate_auth_token(id,expiration=600):
-        s = Serializer(current_app.config['SECRET_KEY'], expiration)
-        return s.dumps({'id': id}).decode('utf-8')
+    s = Serializer(current_app.config['SECRET_KEY'], expiration)
+    return s.dumps({'id': id}).decode('utf-8')
+
+@base_auth.verify_password
+def verify_password(username,password):
+    if username is None or password is None or (username.strip() == '') or (password.strip() == ''):
+        return False
+
+    user_data = Users.query.filter_by(primary_email=username).first()
+    if(user_data is not None and (check_password_hash(user_data.password_hash,password))):
+        return True
+    else:
+        return False
+
+@token_auth.verify_token
+def verify_token(token):
+    if token is None or (token.strip() == ''):
+        return False
+    s = Serializer(current_app.config['SECRET_KEY'])
+    try:
+        data = s.loads(token)
+    except SignatureExpired:
+        return False
+    except BadSignature:
+        return False
+
+    user_data= Users.query.filter_by(id = data['id']).first()
+    if(user_data is not None):
+        return True
+    else:
+        return False
+
 
 @api_v1_0.route('/authorizations',methods = ['POST'])
 def authorization():
@@ -25,14 +55,7 @@ def authorization():
 
     user_data = Users.query.filter_by(primary_email=email).first()
     if(user_data is not None and (check_password_hash(user_data.password_hash,password))):
-        auth_token = generate_auth_token(id = user_data.id)
+        auth_token = generate_auth_token(user_data.id,600)
         return jsonify({'message':'Authorization success','token':auth_token})
     else:
         return jsonify({'message':'Authorization failed'})
-
-@base_auth.verify_password
-def verify_password(username,password):
-
-
-@token_auth.verify_token
-def verify_token(token):

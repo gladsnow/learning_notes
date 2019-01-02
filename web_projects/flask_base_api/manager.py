@@ -4,11 +4,13 @@ import os
 from flask_base_api.__init__ import create_app
 from flask_script import Manager,Shell
 from flask_sqlalchemy import SQLAlchemy
+from flask_mail import Mail
 
 current_dir = os.path.abspath(os.path.dirname(__file__))
 
 app = create_app(current_dir+'\\configure\\dev_config.py')
 db = SQLAlchemy(app)
+mail = Mail(app)
 manager = Manager(app)
 
 def make_shell_context():
